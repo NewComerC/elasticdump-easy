@@ -1,0 +1,9 @@
+{
+  "from": "http://username:password@source-host:9200",
+  "to": "http://username:password@target-host:9200",
+  "limit": 500,
+  "mode": "search_after",
+  "timeout": 900000,
+  "retry": 10,
+  "ignore_errors": true
+}

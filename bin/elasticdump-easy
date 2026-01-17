@@ -1,0 +1,166 @@
+#!/bin/bash
+
+# Elasticdump Easy - 一站式 Elasticsearch 数据迁移工具
+# 让 ES 数据 dump 变得简单
+
+set -e
+
+# 获取脚本目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LIB_DIR="${SCRIPT_DIR}/lib"
+
+# 加载模块
+source "${LIB_DIR}/utils.sh" 2>/dev/null || { echo "错误: 无法加载 utils.sh" >&2; exit 1; }
+source "${LIB_DIR}/config.sh" 2>/dev/null || { echo "错误: 无法加载 config.sh" >&2; exit 1; }
+source "${LIB_DIR}/cli.sh" 2>/dev/null || { echo "错误: 无法加载 cli.sh" >&2; exit 1; }
+source "${LIB_DIR}/dump.sh" 2>/dev/null || { echo "错误: 无法加载 dump.sh" >&2; exit 1; }
+source "${LIB_DIR}/progress.sh" 2>/dev/null || { echo "错误: 无法加载 progress.sh" >&2; exit 1; }
+source "${LIB_DIR}/error.sh" 2>/dev/null || { echo "错误: 无法加载 error.sh" >&2; exit 1; }
+
+# 版本信息
+VERSION="1.0.0"
+
+# 主函数
+main() {
+    # 检查依赖
+    check_dependencies
+    
+    # 解析命令
+    local command="${1:-help}"
+    shift || true
+    
+    case "$command" in
+        dump)
+            cmd_dump "$@"
+            ;;
+        start)
+            # 兼容旧版本
+            cmd_dump "$@"
+            ;;
+        stop)
+            cmd_stop "$@"
+            ;;
+        status)
+            cmd_status "$@"
+            ;;
+        list)
+            cmd_list "$@"
+            ;;
+        resume)
+            cmd_resume "$@"
+            ;;
+        test)
+            cmd_test "$@"
+            ;;
+        init)
+            cmd_init "$@"
+            ;;
+        version|-v|--version)
+            echo "Elasticdump Easy v${VERSION}"
+            ;;
+        help|-h|--help)
+            show_help
+            ;;
+        *)
+            error "未知命令: $command"
+            echo ""
+            show_help
+            exit 1
+            ;;
+    esac
+}
+
+# 显示帮助信息
+show_help() {
+    cat << 'EOF'
+Elasticdump Easy - 让 Elasticsearch 数据迁移变得简单
+
+用法:
+  elasticdump-easy <命令> [选项]
+
+命令:
+  dump <索引名>              开始导出索引数据
+  stop <索引名>              停止正在运行的任务
+  status [索引名]            查看任务状态
+  list                       列出所有任务
+  resume <索引名>            恢复中断的任务
+  test                       测试 ES 连接
+  init                       初始化配置（交互式）
+  version                    显示版本信息
+  help                       显示帮助信息
+
+快速开始:
+  # 最简单的用法（本地 ES）
+  elasticdump-easy dump my_index
+
+  # 指定源和目标
+  elasticdump-easy dump my_index \\
+    --from http://user:pass@source:9200 \\
+    --to http://user:pass@target:9200
+
+  # 重命名索引
+  elasticdump-easy dump source_index \\
+    --to http://user:pass@target:9200/target_index
+
+常用选项:
+  --from <URL>               源 ES 地址（默认: http://localhost:9200）
+  --to <URL>                 目标 ES 地址（默认: http://localhost:9200）
+  --output-index <名称>      输出索引名（默认: 与输入索引相同）
+  --limit <数量>             每批处理的文档数（默认: 自动选择）
+  --mode <模式>              dump 模式: scroll 或 search_after（默认: 自动选择）
+  --shard <ID>               仅导出指定分片
+  --offset <数量>            从第 N 个文档开始（断点续传）
+  --quiet                    静默模式，仅显示关键信息
+  --debug                    调试模式，显示详细日志
+
+配置文件:
+  --config <文件>            使用配置文件
+  --profile <名称>           使用已保存的配置 profile
+
+高级功能:
+  --auto-shard               自动分片导出（大索引）
+  --use-source-mapping       从源索引自动获取 mapping
+  --ignore-errors            忽略单个文档错误，继续处理
+
+示例:
+  # 基本导出
+  elasticdump-easy dump my_index
+
+  # 跨集群迁移
+  elasticdump-easy dump my_index \\
+    --from http://user1:pass1@old-cluster:9200 \\
+    --to http://user2:pass2@new-cluster:9200
+
+  # 大索引分片导出
+  elasticdump-easy dump large_index --shard 0
+  elasticdump-easy dump large_index --shard 1
+
+  # 断点续传
+  elasticdump-easy resume my_index
+
+  # 测试连接
+  elasticdump-easy test --from http://source:9200
+
+更多信息:
+  GitHub: https://github.com/NewComerC/elasticdump-easy
+  文档: https://github.com/NewComerC/elasticdump-easy#readme
+
+EOF
+}
+
+# 检查依赖
+check_dependencies() {
+    if ! command -v elasticdump &> /dev/null; then
+        error "elasticdump 未安装"
+        echo ""
+        echo "请先运行安装脚本:"
+        echo "  ./install.sh"
+        echo ""
+        echo "或手动安装:"
+        echo "  sudo npm install -g elasticdump"
+        exit 1
+    fi
+}
+
+# 运行主函数
+main "$@"

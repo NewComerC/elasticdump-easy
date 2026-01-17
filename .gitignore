@@ -1,0 +1,36 @@
+# 日志文件
+*.log
+
+# PID 文件
+*.pid
+
+# 进度文件
+*.progress
+
+# PIT 文件
+*.pit
+
+# 配置文件（包含敏感信息）
+config_*.json
+!examples/*.json
+
+# 临时文件
+*.tmp
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+
+# Linux
+.directory
+
+# 编辑器
+.vscode/
+.idea/
+*.sublime-*
+
+# Node.js
+node_modules/
+npm-debug.log*

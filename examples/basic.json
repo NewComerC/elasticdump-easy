@@ -1,0 +1,6 @@
+{
+  "from": "http://username:password@source-host:9200",
+  "to": "http://username:password@target-host:9200",
+  "limit": 1000,
+  "mode": "scroll"
+}
